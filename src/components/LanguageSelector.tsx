@@ -5,10 +5,10 @@ import { Languages } from 'lucide-react';
 export default function LanguageSelector() {
   const { language, setLanguage } = useLanguage();
 
-  const options: { code: Language; label: string; flag: string }[] = [
-    { code: 'pt', label: 'Português', flag: '🇧🇷' },
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'id', label: 'Indonesia', flag: '🇮🇩' }
+  const options: { code: Language; label: string; flag: string; displayCode: string }[] = [
+    { code: 'pt', label: 'Português', flag: '🇧🇷', displayCode: 'PT' },
+    { code: 'en', label: 'English', flag: '🇺🇸', displayCode: 'EN' },
+    { code: 'id', label: 'Indonesia', flag: '🇮🇩', displayCode: 'IND' }
   ];
 
   return (
@@ -28,7 +28,7 @@ export default function LanguageSelector() {
           title={opt.label}
         >
           <span>{opt.flag}</span>
-          <span className="uppercase text-[10px] tracking-wider">{opt.code}</span>
+          <span className="uppercase text-[10px] tracking-wider">{opt.displayCode}</span>
         </button>
       ))}
     </div>

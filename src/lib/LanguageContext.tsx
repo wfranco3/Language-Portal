@@ -707,7 +707,17 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('pt');
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      const stored = localStorage.getItem('idiomas_language');
+      if (stored === 'pt' || stored === 'en' || stored === 'id') {
+        return stored as Language;
+      }
+    } catch (e) {
+      console.error('Error recovering language during init:', e);
+    }
+    return 'pt';
+  });
 
   useEffect(() => {
     try {
