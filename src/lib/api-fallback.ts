@@ -83,7 +83,32 @@ function getLocalData(): DatabaseSchema {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data) as DatabaseSchema;
+      let modified = false;
+
+      // Migrate existing local storage to the new teacher details
+      const profHelena = parsed.professores.find(p => p.id === 'prof-helena');
+      if (profHelena && (profHelena.nome !== 'Meella Abdullah' || profHelena.email !== 'meella@idiomas.com')) {
+        profHelena.nome = 'Meella Abdullah';
+        profHelena.email = 'meella@idiomas.com';
+        modified = true;
+      }
+
+      if (!parsed.auth_credentials['meella@idiomas.com']) {
+        parsed.auth_credentials['meella@idiomas.com'] = { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' };
+        modified = true;
+      }
+
+      if (!parsed.auth_credentials['helena@idiomas.com']) {
+        parsed.auth_credentials['helena@idiomas.com'] = { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' };
+        modified = true;
+      }
+
+      if (modified) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+
+      return parsed;
     }
   } catch (e) {
     console.error('Failed to load local DB, falling back to seed data:', e);
