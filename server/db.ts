@@ -210,6 +210,11 @@ export class JSONDatabase {
     this.save();
   }
 
+  public deleteMatriculaByAluno(alunoId: string) {
+    this.data.matriculas = this.data.matriculas.filter(m => m.aluno_id !== alunoId);
+    this.save();
+  }
+
   public addProgresso(prog: Progresso) {
     // Evita duplicados
     const exists = this.data.progresso.some(p => p.matricula_id === prog.matricula_id && p.modulo_id === prog.modulo_id);

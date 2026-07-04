@@ -130,10 +130,10 @@ async function startServer() {
       const activePacote = pacotes.find(p => p.status === 'ativo') || pacotes[0];
       
       const aulas = db.getAulas().filter(au => au.aluno_id === student.id && au.status === 'agendada');
-      const proxima = aulas.length > 0 ? aulas.sort((a,b) => a.data_hora.localeCompare(b.data_hora))[0].data_hora : undefined;
+      const proxima = aulas.length > 0 ? aulas.sort((a,b) => (a.data_hora || '').localeCompare(b.data_hora || ''))[0].data_hora : undefined;
 
       const pagamento = db.getPagamentos().filter(pa => pa.aluno_id === student.id);
-      const currentPagamento = pagamento.length > 0 ? pagamento.sort((a,b) => b.data.localeCompare(a.data))[0] : null;
+      const currentPagamento = pagamento.length > 0 ? pagamento.sort((a,b) => (b.data || '').localeCompare(a.data || ''))[0] : null;
 
       return {
         ...student,
@@ -315,6 +315,53 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.put('/api/modulos/:id', (req, res) => {
+    const { id } = req.params;
+    const { titulo, descricao, ordem } = req.body;
+    const updated = db.updateModulo(id, { 
+      titulo, 
+      descricao, 
+      ordem: Number(ordem) 
+    });
+    if (!updated) {
+      return res.status(404).json({ error: 'Módulo não encontrado' });
+    }
+    res.json(updated);
+  });
+
+  app.post('/api/alunos/inscrever-curso', (req, res) => {
+    const { aluno_id, curso_id } = req.body;
+    if (!aluno_id || !curso_id) {
+      return res.status(400).json({ error: 'ID do aluno e ID do curso são obrigatórios.' });
+    }
+
+    db.deleteMatriculaByAluno(aluno_id);
+    
+    db.addMatricula({
+      id: `mat-${Date.now()}`,
+      aluno_id,
+      curso_id,
+      criado_em: new Date().toISOString()
+    });
+
+    // Automatically unlock the first module of this course so they can test it immediately
+    const modulos = db.getModulos().filter(m => m.curso_id === curso_id).sort((a,b) => a.ordem - b.ordem);
+    if (modulos.length > 0) {
+      const matricula = db.getMatriculas().find(m => m.aluno_id === aluno_id);
+      if (matricula) {
+        db.addProgresso({
+          id: `prog-${Date.now()}`,
+          matricula_id: matricula.id,
+          modulo_id: modulos[0].id,
+          liberado_em: new Date().toISOString(),
+          liberado_por: 'manual'
+        });
+      }
+    }
+
+    res.json({ success: true });
+  });
+
   // Student Modules & Access (Manual Unlock)
   // Get all courses & modules for a student including their unlocked status
   app.get('/api/aluno-conteudo/:alunoId', (req, res) => {
@@ -421,7 +468,7 @@ async function startServer() {
         ...aula,
         aluno_nome: student ? student.nome : 'Desconhecido'
       };
-    }).sort((a,b) => a.data_hora.localeCompare(b.data_hora));
+    }).sort((a,b) => (a.data_hora || '').localeCompare(b.data_hora || ''));
 
     res.json(enriched);
   });
@@ -434,10 +481,31 @@ async function startServer() {
 
     // Find active package
     const pacotes = db.getPacotes().filter(p => p.aluno_id === aluno_id);
-    const activePacote = pacotes.find(p => p.status === 'ativo');
+    let activePacote = pacotes.find(p => p.status === 'ativo');
 
     if (!activePacote) {
-      return res.status(400).json({ error: 'Este aluno não possui nenhum pacote de aulas ativo. Crie um pacote primeiro!' });
+      // Create a default active package on the fly so it does not block the user!
+      const newPacId = `pac-${Date.now()}`;
+      activePacote = {
+        id: newPacId,
+        aluno_id,
+        quantidade_aulas: 10,
+        aulas_consumidas: 0,
+        valor: 800,
+        vencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+        status: 'ativo'
+      };
+      db.addPacote(activePacote);
+
+      // Create a pending payment
+      db.addPagamento({
+        id: `pag-${Date.now()}`,
+        aluno_id,
+        pacote_id: newPacId,
+        valor: 800,
+        data: new Date().toISOString().substring(0, 10),
+        status: 'pendente'
+      });
     }
 
     const newAula: Aula = {
@@ -546,7 +614,7 @@ async function startServer() {
           pacote_detalhes: pac ? `${pac.quantidade_aulas} aulas` : 'Pacote de Aulas'
         };
       })
-      .sort((a,b) => b.data.localeCompare(a.data));
+      .sort((a,b) => (b.data || '').localeCompare(a.data || ''));
 
     res.json(payments);
   });
@@ -614,7 +682,7 @@ async function startServer() {
     if (to) {
       list = list.filter(e => e.to.toLowerCase() === (to as string).toLowerCase());
     }
-    res.json(list.sort((a,b) => b.sent_at.localeCompare(a.sent_at)));
+    res.json(list.sort((a,b) => (b.sent_at || '').localeCompare(a.sent_at || '')));
   });
 
   // Cron triggering endpoint (Force trigger of pg_cron 24h lesson reminder)

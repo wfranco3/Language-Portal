@@ -15,6 +15,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const [modulos, setModulos] = useState<any[]>([]);
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [pacotes, setPacotes] = useState<Pacote[]>([]);
+  const [disponiveis, setDisponiveis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { t, language } = useLanguage();
 
@@ -36,10 +37,33 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
       const resPacotes = await fetch(`/api/pacotes/${user.id}`);
       const dataPacotes = await resPacotes.json();
       setPacotes(dataPacotes);
+
+      // Fetch all available courses
+      const resCursos = await fetch(`/api/cursos?professor_id=${user.professor_id || 'prof-meella'}`);
+      const dataCursos = await resCursos.json();
+      setDisponiveis(dataCursos);
     } catch (err) {
       console.error('Error fetching student data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEnroll = async (cursoId: string) => {
+    try {
+      const res = await fetch('/api/alunos/inscrever-curso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aluno_id: user.id,
+          curso_id: cursoId
+        })
+      });
+      if (res.ok) {
+        fetchStudentData();
+      }
+    } catch (err) {
+      console.error('Error enrolling in course:', err);
     }
   };
 
@@ -50,7 +74,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
   // Separate upcoming and past lessons
   const proximaAula = aulas.filter(a => a.status === 'agendada')[0];
   const historicoAulas = aulas.filter(a => a.status === 'realizada' || a.status === 'cancelada')
-    .sort((a,b) => b.data_hora.localeCompare(a.data_hora));
+    .sort((a,b) => (b.data_hora || '').localeCompare(a.data_hora || ''));
 
   // Active package
   const activePacote = pacotes.find(p => p.status === 'ativo') || pacotes[0];
@@ -86,12 +110,15 @@ Congratulations on advancing your linguistic journey!
 
   // Helper to format date nicely based on active locale
   const formatDate = (isoStr: string) => {
+    if (!isoStr) return '';
     const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
     const locale = language === 'pt' ? 'pt-BR' : language === 'id' ? 'id-ID' : 'en-US';
     return d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const formatTime = (isoStr: string) => {
+    if (!isoStr || typeof isoStr !== 'string') return '';
     return isoStr.substring(11, 16);
   };
 
@@ -152,22 +179,62 @@ Congratulations on advancing your linguistic journey!
               
               {/* Modules List */}
               <section className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-ink-navy/5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-ink-navy/5">
                   <div>
                     <span className="text-[10px] font-mono-plex text-coral uppercase tracking-widest block mb-1">{t('studyProgram')}</span>
                     <h3 className="font-serif text-2xl text-ink-navy">{t('learningModules')}</h3>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-sage-light text-sage text-xs font-medium px-3 py-1 rounded-full border border-sage/10">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span>{t('sequentialOrder')}</span>
+                  <div className="flex items-center gap-3">
+                    {disponiveis.length > 0 && (
+                      <select
+                        value={curso?.id || ''}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            await handleEnroll(val);
+                          }
+                        }}
+                        className="text-xs bg-sand-light text-ink-navy border border-ink-navy/10 rounded-full px-3 py-1 font-mono-plex uppercase tracking-wider cursor-pointer"
+                      >
+                        <option value="" disabled>-- {t('linkToCourseLabel') || 'Vincular ao Curso'} --</option>
+                        {disponiveis.map(c => (
+                          <option key={c.id} value={c.id}>{t(c.nome)}</option>
+                        ))}
+                      </select>
+                    )}
+                    <div className="flex items-center gap-1.5 bg-sage-light text-sage text-xs font-medium px-3 py-1 rounded-full border border-sage/10">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>{t('sequentialOrder')}</span>
+                    </div>
                   </div>
                 </div>
 
                 {!curso ? (
-                  <div className="text-center py-12 bg-sand-light/50 rounded-lg border border-dashed border-ink-navy/10">
+                  <div className="text-center py-12 bg-sand-light/50 rounded-lg border border-dashed border-ink-navy/10 space-y-4">
                     <BookOpen className="w-8 h-8 mx-auto text-ink-navy/30 mb-2" />
                     <p className="text-sm font-serif text-ink-navy/70">{t('noCourseEnrolled')}</p>
-                    <p className="text-xs text-ink-navy/50 mt-1">{t('teachersUpdateSoon')}</p>
+                    {disponiveis.length > 0 ? (
+                      <div className="max-w-xs mx-auto p-3 bg-card-bg rounded-xl border border-coral/10 space-y-2">
+                        <label className="block text-[10px] font-mono-plex uppercase tracking-wider text-ink-navy/70">{t('linkToCourseLabel') || 'Escolher Curso'}</label>
+                        <select
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              await handleEnroll(val);
+                            }
+                          }}
+                          className="w-full bg-sand-light text-ink-navy border border-ink-navy/10 rounded-lg p-2 text-xs"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>-- Selecione um curso --</option>
+                          {disponiveis.map(c => (
+                            <option key={c.id} value={c.id}>{t(c.nome)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-ink-navy/50 mt-1">{t('teachersUpdateSoon')}</p>
+                    )}
                   </div>
                 ) : modulos.length === 0 ? (
                   <div className="text-center py-12 bg-sand-light/50 rounded-lg border border-dashed border-ink-navy/10">

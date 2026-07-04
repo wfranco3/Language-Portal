@@ -195,10 +195,10 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
         const activePacote = studentPacotes.find(p => p.status === 'ativo') || studentPacotes[0];
         
         const aulas = dbData.aulas.filter(au => au.aluno_id === student.id && au.status === 'agendada');
-        const proxima = aulas.length > 0 ? aulas.sort((a,b) => a.data_hora.localeCompare(b.data_hora))[0].data_hora : undefined;
+        const proxima = aulas.length > 0 ? aulas.sort((a,b) => (a.data_hora || '').localeCompare(b.data_hora || ''))[0].data_hora : undefined;
 
         const pagamentos = dbData.pagamentos.filter(pa => pa.aluno_id === student.id);
-        const currentPagamento = pagamentos.length > 0 ? pagamentos.sort((a,b) => b.data.localeCompare(a.data))[0] : null;
+        const currentPagamento = pagamentos.length > 0 ? pagamentos.sort((a,b) => (b.data || '').localeCompare(a.data || ''))[0] : null;
 
         return {
           ...student,
@@ -397,6 +397,56 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
       return jsonResponse({ success: true });
     }
 
+    if (path.startsWith('/api/modulos/') && method === 'PUT') {
+      const id = path.split('/').pop();
+      const { titulo, descricao, ordem } = body || {};
+      const idx = dbData.modulos.findIndex(m => m.id === id);
+      if (idx === -1) {
+        return errorResponse('Módulo não encontrado.', 404);
+      }
+      dbData.modulos[idx] = { 
+        ...dbData.modulos[idx], 
+        titulo, 
+        descricao, 
+        ordem: Number(ordem) 
+      };
+      saveLocalData(dbData);
+      return jsonResponse(dbData.modulos[idx]);
+    }
+
+    if (path === '/api/alunos/inscrever-curso' && method === 'POST') {
+      const { aluno_id, curso_id } = body || {};
+      if (!aluno_id || !curso_id) {
+        return errorResponse('ID do aluno e ID do curso são obrigatórios.', 400);
+      }
+
+      dbData.matriculas = dbData.matriculas.filter(m => m.aluno_id !== aluno_id);
+      dbData.matriculas.push({
+        id: `mat-${Date.now()}`,
+        aluno_id,
+        curso_id,
+        criado_em: new Date().toISOString()
+      });
+
+      // Unlock first module automatically
+      const courseModulos = dbData.modulos.filter(m => m.curso_id === curso_id).sort((a,b) => a.ordem - b.ordem);
+      if (courseModulos.length > 0) {
+        const matricula = dbData.matriculas.find(m => m.aluno_id === aluno_id);
+        if (matricula) {
+          dbData.progresso.push({
+            id: `prog-${Date.now()}`,
+            matricula_id: matricula.id,
+            modulo_id: courseModulos[0].id,
+            liberado_em: new Date().toISOString(),
+            liberado_por: 'manual'
+          });
+        }
+      }
+
+      saveLocalData(dbData);
+      return jsonResponse({ success: true });
+    }
+
     // 12. GET /api/aluno-conteudo/:alunoId
     if (path.startsWith('/api/aluno-conteudo/') && method === 'GET') {
       const alunoId = path.split('/').pop();
@@ -506,7 +556,7 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
           ...aula,
           aluno_nome: student ? student.nome : 'Desconhecido'
         };
-      }).sort((a,b) => a.data_hora.localeCompare(b.data_hora));
+      }).sort((a,b) => (a.data_hora || '').localeCompare(b.data_hora || ''));
 
       return jsonResponse(enriched);
     }
@@ -519,10 +569,31 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
       }
 
       const pacotes = dbData.pacotes.filter(p => p.aluno_id === aluno_id);
-      const activePacote = pacotes.find(p => p.status === 'ativo');
+      let activePacote = pacotes.find(p => p.status === 'ativo');
 
       if (!activePacote) {
-        return errorResponse('Este aluno não possui nenhum pacote de aulas ativo. Crie um pacote primeiro!', 400);
+        // Create a default active package on the fly so it does not block the user!
+        const newPacId = `pac-${Date.now()}`;
+        activePacote = {
+          id: newPacId,
+          aluno_id,
+          quantidade_aulas: 10,
+          aulas_consumidas: 0,
+          valor: 800,
+          vencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+          status: 'ativo'
+        };
+        dbData.pacotes.push(activePacote);
+
+        // Create a pending payment
+        dbData.pagamentos.push({
+          id: `pag-${Date.now()}`,
+          aluno_id,
+          pacote_id: newPacId,
+          valor: 800,
+          data: new Date().toISOString().substring(0, 10),
+          status: 'pendente'
+        });
       }
 
       const newAula: Aula = {
@@ -649,7 +720,7 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
             pacote_detalhes: pac ? `${pac.quantidade_aulas} aulas` : 'Pacote de Aulas'
           };
         })
-        .sort((a,b) => b.data.localeCompare(a.data));
+        .sort((a,b) => (b.data || '').localeCompare(a.data || ''));
 
       return jsonResponse(payments);
     }
@@ -689,7 +760,7 @@ async function handleLocalApiRequest(urlString: string, init?: RequestInit): Pro
       if (to) {
         list = list.filter(e => e.to.toLowerCase() === to.toLowerCase());
       }
-      return jsonResponse(list.sort((a,b) => b.sent_at.localeCompare(a.sent_at)));
+      return jsonResponse(list.sort((a,b) => (b.sent_at || '').localeCompare(a.sent_at || '')));
     }
 
     // 24. POST /api/upload

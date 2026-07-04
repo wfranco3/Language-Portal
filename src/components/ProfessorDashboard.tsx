@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AuthUser, Aluno, Curso, Modulo, Aula, Pagamento, EmailLog } from '../types';
 import { 
   Users, BookOpen, Calendar, DollarSign, Plus, Trash2, Edit2, 
-  Check, X, FileText, Upload, Send, RefreshCw, Eye, Sparkles, AlertCircle 
+  Check, X, FileText, Upload, Send, RefreshCw, Eye, Sparkles, AlertCircle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import LanguageSelector from './LanguageSelector';
@@ -39,6 +40,11 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
     titulo: '', descricao: '', arquivo_url: '', ordem: ''
   });
 
+  const [editingModulo, setEditingModulo] = useState<Modulo | null>(null);
+  const [editModuloTitulo, setEditModuloTitulo] = useState('');
+  const [editModuloDescricao, setEditModuloDescricao] = useState('');
+  const [editModuloOrdem, setEditModuloOrdem] = useState('');
+
   const [showAddAula, setShowAddAula] = useState(false);
   const [newAula, setNewAula] = useState({
     aluno_id: '', data_hora: '', link_video: 'https://meet.google.com/abc-defg-hij'
@@ -51,6 +57,95 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
   // Student manual unlock grid state
   const [unlockStudent, setUnlockStudent] = useState<Aluno | null>(null);
   const [studentContent, setStudentContent] = useState<any>(null);
+
+  // Calendar states
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarDate, setCalendarDate] = useState(new Date());
+
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(getTodayStr());
+
+  const getCalendarDays = (year: number, month: number) => {
+    const firstDayIndex = new Date(year, month, 1).getDay(); // Sunday=0, Saturday=6
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+    
+    const days: { day: number; monthOffset: number; dateStr: string }[] = [];
+    
+    // Previous month days
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const prevDay = prevMonthTotalDays - i;
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevYear = month === 0 ? year - 1 : year;
+      const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(prevDay).padStart(2, '0')}`;
+      days.push({ day: prevDay, monthOffset: -1, dateStr });
+    }
+    
+    // Current month days
+    for (let i = 1; i <= totalDays; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      days.push({ day: i, monthOffset: 0, dateStr });
+    }
+    
+    // Next month days to fill up to a multiple of 7 or 42 cells
+    const remainingCells = 42 - days.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      const nextMonth = month === 11 ? 0 : month + 1;
+      const nextYear = month === 11 ? year + 1 : year;
+      const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      days.push({ day: i, monthOffset: 1, dateStr });
+    }
+    
+    return days;
+  };
+
+  const getAulasForDate = (dateStr: string) => {
+    return aulas.filter(aula => {
+      if (!aula.data_hora || typeof aula.data_hora !== 'string') return false;
+      return aula.data_hora.substring(0, 10) === dateStr;
+    });
+  };
+
+  const handlePrevMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1));
+  };
+
+  const handleToday = () => {
+    setCalendarDate(new Date());
+    setSelectedDateStr(getTodayStr());
+  };
+
+  const getMonthName = (monthIdx: number) => {
+    const monthsPt = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthsEn = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthsId = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    if (language === 'pt') return monthsPt[monthIdx];
+    if (language === 'id') return monthsId[monthIdx];
+    return monthsEn[monthIdx];
+  };
+
+  const formatSelectedDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T12:00:00');
+    const locale = language === 'pt' ? 'pt-BR' : language === 'id' ? 'id-ID' : 'en-US';
+    return d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   // Fetch all dashboard data
   const fetchData = async () => {
@@ -254,6 +349,34 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
     }
   };
 
+  // Update Module
+  const handleUpdateModulo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingModulo) return;
+    try {
+      const response = await fetch(`/api/modulos/${editingModulo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: editModuloTitulo,
+          descricao: editModuloDescricao,
+          ordem: Number(editModuloOrdem)
+        })
+      });
+
+      if (response.ok) {
+        setEditingModulo(null);
+        // Reload modules
+        const res = await fetch(`/api/cursos/${selectedCursoId}/modulos`);
+        const data = await res.json();
+        setModulosList(data);
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Schedule Lesson
   const handleCreateAula = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,7 +461,9 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
 
   // Helpers
   const formatDateTime = (isoStr: string) => {
+    if (!isoStr || typeof isoStr !== 'string') return '';
     const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
     const locale = language === 'pt' ? 'pt-BR' : language === 'id' ? 'id-ID' : 'en-US';
     const separator = language === 'pt' ? ' às ' : language === 'id' ? ' pada ' : ' at ';
     return d.toLocaleDateString(locale) + separator + isoStr.substring(11, 16);
@@ -562,7 +687,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                             </div>
                             <div className="font-serif text-xs font-semibold text-ink-navy">{email.subject}</div>
                             <p className="text-[11px] text-ink-navy/70 whitespace-pre-line leading-relaxed border-t border-ink-navy/5 pt-1.5">
-                              {email.body.substring(0, 140)}...
+                              {(email.body || '').substring(0, 140)}...
                             </p>
                           </div>
                         ))
@@ -594,7 +719,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
 
                 {/* Form Add Student Overlay */}
                 {showAddAluno && (
-                  <form onSubmit={handleCreateAluno} className="bg-white rounded-[14px] border border-coral/30 p-6 space-y-4">
+                  <form onSubmit={handleCreateAluno} className="bg-card-bg rounded-[14px] border border-coral/30 p-6 space-y-4">
                     <div className="flex justify-between items-center border-b border-ink-navy/5 pb-2">
                       <h4 className="font-serif text-lg text-ink-navy">{t('registerNewStudentTitle')}</h4>
                       <button type="button" onClick={() => setShowAddAluno(false)} className="text-ink-navy/40 hover:text-coral cursor-pointer">
@@ -610,7 +735,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           required
                           value={newAluno.nome}
                           onChange={e => setNewAluno({ ...newAluno, nome: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                           placeholder="Ex: Carlos Silva"
                         />
                       </div>
@@ -621,7 +746,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           required
                           value={newAluno.email}
                           onChange={e => setNewAluno({ ...newAluno, email: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                           placeholder="Ex: carlos@aluno.com"
                         />
                       </div>
@@ -631,7 +756,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           type="text"
                           value={newAluno.senha}
                           onChange={e => setNewAluno({ ...newAluno, senha: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                           placeholder="Default: aluno"
                         />
                       </div>
@@ -643,7 +768,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                         <select
                           value={newAluno.curso_id}
                           onChange={e => setNewAluno({ ...newAluno, curso_id: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                         >
                           <option value="">{t('selectCoursePlaceholder')}</option>
                           {cursos.map(c => (
@@ -657,7 +782,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           type="number"
                           value={newAluno.quantidade_aulas}
                           onChange={e => setNewAluno({ ...newAluno, quantidade_aulas: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                         />
                       </div>
                       <div>
@@ -666,7 +791,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           type="number"
                           value={newAluno.valor}
                           onChange={e => setNewAluno({ ...newAluno, valor: e.target.value })}
-                          className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                          className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                         />
                       </div>
                     </div>
@@ -792,7 +917,9 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                             <div>
                               <span className="text-[9px] font-mono-plex uppercase text-ink-navy/50 block">{t('colNextClass').toUpperCase()}</span>
                               <span className="text-ink-navy font-semibold">
-                                {aluno.proxima_aula ? aluno.proxima_aula.substring(11, 16) + ' - ' + aluno.proxima_aula.substring(8, 10) + '/' + aluno.proxima_aula.substring(5, 7) : t('notScheduled')}
+                                {aluno.proxima_aula && typeof aluno.proxima_aula === 'string' && aluno.proxima_aula.length >= 10 ? (
+                                  (aluno.proxima_aula.substring(11, 16) || '00:00') + ' - ' + aluno.proxima_aula.substring(8, 10) + '/' + aluno.proxima_aula.substring(5, 7)
+                                ) : t('notScheduled')}
                               </span>
                             </div>
                           </div>
@@ -910,14 +1037,14 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                   </div>
 
                   {showAddCurso && (
-                    <form onSubmit={handleCreateCurso} className="bg-white rounded-xl border border-coral/20 p-4 space-y-3">
+                    <form onSubmit={handleCreateCurso} className="bg-card-bg rounded-xl border border-coral/20 p-4 space-y-3">
                       <input
                         type="text"
                         required
                         placeholder={t('courseNamePlaceholder')}
                         value={newCursoNome}
                         onChange={e => setNewCursoNome(e.target.value)}
-                        className="w-full bg-sand-light/50 border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                        className="w-full bg-sand-light/50 text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                       />
                       <div className="flex justify-end gap-1 text-xs">
                         <button type="button" onClick={() => setShowAddCurso(false)} className="px-2 py-1 bg-sand rounded">{t('cancel')}</button>
@@ -989,7 +1116,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                                 required
                                 value={newModulo.titulo}
                                 onChange={e => setNewModulo({ ...newModulo, titulo: e.target.value })}
-                                className="w-full bg-white border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                                className="w-full bg-card-bg text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                                 placeholder={t('moduleTitlePlaceholder')}
                               />
                             </div>
@@ -999,7 +1126,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                                 type="number"
                                 value={newModulo.ordem}
                                 onChange={e => setNewModulo({ ...newModulo, ordem: e.target.value })}
-                                className="w-full bg-white border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                                className="w-full bg-card-bg text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
                                 placeholder={t('moduleOrderPlaceholder')}
                               />
                             </div>
@@ -1011,7 +1138,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                               required
                               value={newModulo.descricao}
                               onChange={e => setNewModulo({ ...newModulo, descricao: e.target.value })}
-                              className="w-full bg-white border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs h-16"
+                              className="w-full bg-card-bg text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs h-16"
                               placeholder={t('moduleDescPlaceholder')}
                             />
                           </div>
@@ -1043,22 +1170,76 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                                 {String(mod.ordem).padStart(2, '0')}
                               </div>
 
-                              <div className="flex-1 space-y-1">
-                                <h4 className="font-serif text-base text-ink-navy font-semibold">{t(mod.titulo)}</h4>
-                                <p className="text-xs text-ink-navy/60 leading-relaxed font-sans">{t(mod.descricao)}</p>
-                                <div className="pt-2 text-[10px] font-mono-plex text-coral flex items-center gap-1">
-                                  <FileText className="w-3.5 h-3.5" />
-                                  <span className="truncate max-w-[200px]">{mod.arquivo_url}</span>
-                                </div>
-                              </div>
+                              {editingModulo?.id === mod.id ? (
+                                <form onSubmit={handleUpdateModulo} className="flex-1 space-y-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <div className="sm:col-span-2">
+                                      <input
+                                        type="text"
+                                        required
+                                        value={editModuloTitulo}
+                                        onChange={e => setEditModuloTitulo(e.target.value)}
+                                        className="w-full bg-sand-light text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                                        placeholder={t('moduleTitlePlaceholder')}
+                                      />
+                                    </div>
+                                    <div>
+                                      <input
+                                        type="number"
+                                        required
+                                        value={editModuloOrdem}
+                                        onChange={e => setEditModuloOrdem(e.target.value)}
+                                        className="w-full bg-sand-light text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs"
+                                        placeholder="Ordem"
+                                      />
+                                    </div>
+                                  </div>
+                                  <textarea
+                                    required
+                                    value={editModuloDescricao}
+                                    onChange={e => setEditModuloDescricao(e.target.value)}
+                                    className="w-full bg-sand-light text-ink-navy border border-[rgba(28,37,65,0.12)] rounded-lg p-2 text-xs h-16"
+                                    placeholder={t('moduleDescPlaceholder')}
+                                  />
+                                  <div className="flex justify-end gap-1.5 text-xs">
+                                    <button type="button" onClick={() => setEditingModulo(null)} className="px-2.5 py-1 bg-sand text-ink-navy rounded-lg">{t('cancel')}</button>
+                                    <button type="submit" className="px-2.5 py-1 bg-coral text-white rounded-lg">{t('save')}</button>
+                                  </div>
+                                </form>
+                              ) : (
+                                <>
+                                  <div className="flex-1 space-y-1">
+                                    <h4 className="font-serif text-base text-ink-navy font-semibold">{t(mod.titulo)}</h4>
+                                    <p className="text-xs text-ink-navy/60 leading-relaxed font-sans">{t(mod.descricao)}</p>
+                                    <div className="pt-2 text-[10px] font-mono-plex text-coral flex items-center gap-1">
+                                      <FileText className="w-3.5 h-3.5" />
+                                      <span className="truncate max-w-[200px]">{mod.arquivo_url}</span>
+                                    </div>
+                                  </div>
 
-                              <button
-                                onClick={() => handleDeleteModulo(mod.id)}
-                                className="text-ink-navy/30 hover:text-coral p-1.5 rounded cursor-pointer self-start"
-                                title={t('btnDeleteModule')}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                  <div className="flex items-center gap-1 self-start flex-shrink-0">
+                                    <button
+                                      onClick={() => {
+                                        setEditingModulo(mod);
+                                        setEditModuloTitulo(mod.titulo);
+                                        setEditModuloDescricao(mod.descricao);
+                                        setEditModuloOrdem(String(mod.ordem));
+                                      }}
+                                      className="text-ink-navy/30 hover:text-sage p-1.5 rounded cursor-pointer"
+                                      title={t('btnEditModule') || 'Editar Módulo'}
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteModulo(mod.id)}
+                                      className="text-ink-navy/30 hover:text-coral p-1.5 rounded cursor-pointer"
+                                      title={t('btnDeleteModule')}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1079,24 +1260,33 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
             {activeTab === 'agenda' && (
               <div className="space-y-6">
                 
-                <div className="flex items-center justify-between pb-4 border-b border-ink-navy/5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ink-navy/5">
                   <div>
                     <span className="text-[10px] font-mono-plex text-coral uppercase tracking-widest block mb-1 font-bold">{t('scheduleManagement')}</span>
                     <h3 className="font-serif text-2xl text-ink-navy">{t('classScheduleTitle')}</h3>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (alunos.length === 0) {
-                        alert(t('alertRegisterStudentFirst'));
-                        return;
-                      }
-                      setShowAddAula(true);
-                    }}
-                    className="bg-coral hover:bg-coral/95 text-white text-xs font-medium py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>{t('btnScheduleLesson')}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+                      className="bg-sand hover:bg-sand/80 text-ink-navy text-xs font-medium py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-[rgba(28,37,65,0.12)] font-semibold"
+                    >
+                      <Calendar className="w-4 h-4 text-coral" />
+                      <span>{viewMode === 'list' ? 'Ver Calendário' : 'Ver Lista'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (alunos.length === 0) {
+                          alert(t('alertRegisterStudentFirst'));
+                          return;
+                        }
+                        setShowAddAula(true);
+                      }}
+                      className="bg-coral hover:bg-coral/95 text-white text-xs font-medium py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{t('btnScheduleLesson')}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {showAddAula && (
@@ -1155,7 +1345,208 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                   </form>
                 )}
 
-                {aulas.length === 0 ? (
+                {viewMode === 'calendar' ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left: The Monthly Calendar Grid */}
+                    <div className="lg:col-span-2 bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-4 space-y-4">
+                      {/* Calendar Navigation Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-ink-navy/5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif text-lg font-bold text-ink-navy capitalize">
+                            {getMonthName(calendarDate.getMonth())} {calendarDate.getFullYear()}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={handlePrevMonth}
+                            className="p-1.5 hover:bg-sand-light rounded-lg border border-[rgba(28,37,65,0.1)] text-ink-navy cursor-pointer transition-all"
+                            title="Mês Anterior"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleToday}
+                            className="text-xs px-2.5 py-1.5 hover:bg-sand-light rounded-lg border border-[rgba(28,37,65,0.1)] text-ink-navy cursor-pointer font-semibold transition-all"
+                          >
+                            {language === 'pt' ? 'Hoje' : language === 'id' ? 'Hari Ini' : 'Today'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleNextMonth}
+                            className="p-1.5 hover:bg-sand-light rounded-lg border border-[rgba(28,37,65,0.1)] text-ink-navy cursor-pointer transition-all"
+                            title="Próximo Mês"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Weekdays Header */}
+                      <div className="grid grid-cols-7 text-center font-mono-plex text-[10px] uppercase tracking-wider text-ink-navy/50 font-bold border-b border-ink-navy/5 pb-2">
+                        {(language === 'pt' 
+                          ? ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] 
+                          : language === 'id'
+                          ? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+                          : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                        ).map((wd, idx) => (
+                          <div key={idx}>{wd}</div>
+                        ))}
+                      </div>
+
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 border-r border-b border-ink-navy/5">
+                        {getCalendarDays(calendarDate.getFullYear(), calendarDate.getMonth()).map((cell, idx) => {
+                          const dayAulas = getAulasForDate(cell.dateStr);
+                          const isSelected = cell.dateStr === selectedDateStr;
+                          const isToday = cell.dateStr === getTodayStr();
+                          const isCurrentMonth = cell.monthOffset === 0;
+
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setSelectedDateStr(cell.dateStr)}
+                              className={`text-left p-2 border-t border-l border-ink-navy/5 min-h-[70px] sm:min-h-[100px] flex flex-col justify-between transition-all select-none hover:bg-sand-light/20 relative cursor-pointer ${
+                                isSelected ? 'bg-coral/5 ring-1 ring-coral/30 z-10' : ''
+                              } ${!isCurrentMonth ? 'bg-sand-light/5 text-ink-navy/30' : 'text-ink-navy bg-card-bg'}`}
+                            >
+                              {/* Day Number Row */}
+                              <div className="flex justify-between items-start w-full">
+                                <span className={`text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full ${
+                                  isToday ? 'bg-coral text-white font-bold' : isSelected ? 'text-coral font-bold' : ''
+                                }`}>
+                                  {cell.day}
+                                </span>
+                                
+                                {/* Count Indicator badge for mobile */}
+                                {dayAulas.length > 0 && (
+                                  <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-coral inline-block"></span>
+                                )}
+                              </div>
+
+                              {/* Aulas List in Cell (Desktop only) */}
+                              <div className="hidden sm:block w-full space-y-1 mt-1 overflow-hidden flex-1">
+                                {dayAulas.slice(0, 3).map(aula => (
+                                  <div
+                                    key={aula.id}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded truncate font-semibold border ${
+                                      aula.status === 'agendada'
+                                        ? 'bg-sand text-ink-navy border-ink-navy/10'
+                                        : aula.status === 'realizada'
+                                        ? 'bg-sage-light text-sage border-sage/10'
+                                        : 'bg-coral/10 text-coral border-coral/10'
+                                    }`}
+                                    title={`${(aula.data_hora || '').substring(11, 16)} - ${aula.aluno_nome}`}
+                                  >
+                                    {(aula.data_hora || '').substring(11, 16)} {aula.aluno_nome}
+                                  </div>
+                                ))}
+                                {dayAulas.length > 3 && (
+                                  <div className="text-[8px] font-mono-plex text-ink-navy/40 pl-1">
+                                    +{dayAulas.length - 3} {language === 'pt' ? 'mais' : 'more'}
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Right: Selected Day Details Panel */}
+                    <div className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-5 space-y-4 flex flex-col justify-start">
+                      <div className="border-b border-ink-navy/5 pb-2">
+                        <span className="text-[9px] font-mono-plex text-coral uppercase tracking-wider block font-bold">
+                          {language === 'pt' ? 'Detalhes do Dia' : language === 'id' ? 'Detail Hari' : 'Day Details'}
+                        </span>
+                        <h4 className="font-serif text-base font-bold text-ink-navy">
+                          {formatSelectedDate(selectedDateStr)}
+                        </h4>
+                      </div>
+
+                      {getAulasForDate(selectedDateStr).length === 0 ? (
+                        <div className="text-center py-10 bg-sand-light/20 rounded-xl border border-dashed border-ink-navy/10 flex-1 flex flex-col justify-center items-center">
+                          <Calendar className="w-8 h-8 mx-auto text-ink-navy/20 mb-2" />
+                          <p className="text-xs text-ink-navy/50 max-w-[180px] mx-auto">
+                            {language === 'pt' ? 'Nenhuma aula agendada para este dia.' : language === 'id' ? 'Tidak ada kelas terjadwal untuk hari ini.' : 'No classes scheduled for this day.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                          {getAulasForDate(selectedDateStr).map(aula => (
+                            <div key={aula.id} className="p-3 bg-sand-light/30 rounded-xl border border-ink-navy/5 space-y-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="text-xs font-mono font-bold text-coral bg-coral/5 px-2 py-0.5 rounded-md">
+                                    {(aula.data_hora || '').substring(11, 16)}
+                                  </span>
+                                  <h5 className="font-serif text-sm font-bold text-ink-navy mt-1">
+                                    {aula.aluno_nome}
+                                  </h5>
+                                </div>
+                                <span className={`text-[8px] font-mono-plex uppercase tracking-wider px-2 py-0.5 rounded-full font-bold ${
+                                  aula.status === 'agendada'
+                                    ? 'bg-sand text-ink-navy'
+                                    : aula.status === 'realizada'
+                                    ? 'bg-sage-light text-sage'
+                                    : 'bg-coral/10 text-coral'
+                                }`}>
+                                  {aula.status === 'agendada' ? t('statusScheduled') : aula.status === 'realizada' ? t('statusCompleted') : t('statusCancelled')}
+                                </span>
+                              </div>
+
+                              <div className="text-[11px] text-ink-navy/70 space-y-1">
+                                <div>
+                                  <strong className="font-semibold">{language === 'pt' ? 'Professor: ' : 'Teacher: '}</strong>
+                                  {user.nome}
+                                </div>
+                                <div className="truncate">
+                                  <strong className="font-semibold">Meet: </strong>
+                                  <a href={aula.link_video} target="_blank" rel="noreferrer" className="text-coral underline font-mono text-[10px]">
+                                    {aula.link_video}
+                                  </a>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 border-t border-ink-navy/5 mt-1">
+                                <div className="flex gap-1">
+                                  {aula.status === 'agendada' && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateAulaStatus(aula.id, 'realizada')}
+                                        className="text-[10px] bg-sage-light hover:bg-sage hover:text-white text-sage px-2 py-1 rounded border border-sage/10 cursor-pointer font-semibold transition-all"
+                                      >
+                                        {t('statusCompleted')}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateAulaStatus(aula.id, 'cancelada')}
+                                        className="text-[10px] bg-coral/10 hover:bg-coral hover:text-white text-coral px-2 py-1 rounded border border-coral/10 cursor-pointer font-semibold transition-all"
+                                      >
+                                        {t('cancel')}
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAula(aula.id)}
+                                  className="text-ink-navy/30 hover:text-coral p-1 rounded cursor-pointer transition-all"
+                                  title={t('cancel')}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : aulas.length === 0 ? (
                   <div className="text-center py-12 bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] text-sm text-ink-navy/40">
                     {t('noLessonsScheduled')}
                   </div>
