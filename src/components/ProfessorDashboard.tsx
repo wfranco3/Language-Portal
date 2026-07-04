@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AuthUser, Aluno, Curso, Modulo, Aula, Pagamento, EmailLog } from '../types';
 import { 
   Users, BookOpen, Calendar, DollarSign, Plus, Trash2, Edit2, 
   Check, X, FileText, Upload, Send, RefreshCw, Eye, Sparkles, AlertCircle,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, BarChart3, List
 } from 'lucide-react';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+} from 'recharts';
 import { useLanguage } from '../lib/LanguageContext';
 import LanguageSelector from './LanguageSelector';
 import ThemeSelector from './ThemeSelector';
@@ -62,6 +65,12 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarDate, setCalendarDate] = useState(new Date());
 
+  // Billing states
+  const [billingViewMode, setBillingViewMode] = useState<'list' | 'chart'>('list');
+  const [billingFilterType, setBillingFilterType] = useState<'quick' | 'months'>('quick');
+  const [billingQuickFilter, setBillingQuickFilter] = useState<'last30' | 'last60' | 'last90' | 'all'>('last30');
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([new Date().getMonth()]);
+  
   const getTodayStr = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1271,7 +1280,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                       className="bg-sand hover:bg-sand/80 text-ink-navy text-xs font-medium py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-[rgba(28,37,65,0.12)] font-semibold"
                     >
                       <Calendar className="w-4 h-4 text-coral" />
-                      <span>{viewMode === 'list' ? 'Ver Calendário' : 'Ver Lista'}</span>
+                      <span>{viewMode === 'list' ? t('btnViewCalendar') : t('btnViewList')}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -1666,11 +1675,75 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
             {activeTab === 'pagamentos' && (
               <div className="space-y-6">
                 
-                <div>
-                  <span className="text-[10px] font-mono-plex text-coral uppercase tracking-widest block mb-1 font-bold">{t('financialBilling')}</span>
-                  <h3 className="font-serif text-2xl text-ink-navy">{t('billingControl')}</h3>
-                  <p className="text-xs text-ink-navy/60 mt-0.5">{t('billingControlDesc')}</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] font-mono-plex text-coral uppercase tracking-widest block mb-1 font-bold">{t('financialBilling')}</span>
+                    <h3 className="font-serif text-2xl text-ink-navy">{t('billingControl')}</h3>
+                    <p className="text-xs text-ink-navy/60 mt-0.5">{t('billingControlDesc')}</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setBillingViewMode(billingViewMode === 'list' ? 'chart' : 'list')}
+                      className="bg-sand hover:bg-sand/80 text-ink-navy text-xs font-medium py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-[rgba(28,37,65,0.12)] font-semibold"
+                    >
+                      {billingViewMode === 'list' ? <BarChart3 className="w-4 h-4 text-coral" /> : <List className="w-4 h-4 text-coral" />}
+                      <span>{billingViewMode === 'list' ? t('viewChart') : t('navBilling')}</span>
+                    </button>
+                  </div>
                 </div>
+
+                {billingViewMode === 'list' && (
+                  <div className="flex flex-wrap gap-2 items-center bg-sand-light/30 p-3 rounded-xl border border-ink-navy/5">
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last30' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last30Days')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last60'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last60' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last60Days')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last90'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last90' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last90Days')}</button>
+                    
+                    <select className="text-xs px-3 py-1.5 rounded-lg border border-ink-navy/10 bg-white" onChange={(e) => { setBillingFilterType('months'); setSelectedMonths([parseInt(e.target.value)]); }} value={selectedMonths[0]}>
+                      {[t('january'), t('february'), t('march'), t('april'), t('may'), t('june'), t('july'), t('august'), t('september'), t('october'), t('november'), t('december')].map((m, i) => (
+                          <option key={i} value={i}>{m}</option>
+                      ))}
+                    </select>
+                    
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); setSelectedMonths([new Date().getMonth()]); }} className="text-xs text-ink-navy/50 underline">{t('clearFilter')}</button>
+                  </div>
+                )}
+                
+                {billingViewMode === 'chart' && (
+                  <div className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={
+                        Array.from({length: 12}).map((_, i) => {
+                          const monthPagamentos = pagamentos.filter(p => new Date(p.data).getMonth() === i);
+                          return {
+                            name: [t('january'), t('february'), t('march'), t('april'), t('may'), t('june'), t('july'), t('august'), t('september'), t('october'), t('november'), t('december')][i],
+                            valor: monthPagamentos.reduce((acc, p) => acc + p.valor, 0),
+                            alunos: new Set(monthPagamentos.map(p => p.aluno_id)).size,
+                            faturas: monthPagamentos.length
+                          };
+                        })
+                      }>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white p-3 border border-ink-navy/10 rounded-lg shadow-lg">
+                                <p className="font-bold text-ink-navy">{label}</p>
+                                <p className="text-xs text-ink-navy/70">{t('totalBilled')}: R$ {payload[0].value?.toFixed(2)}</p>
+                                <p className="text-xs text-ink-navy/70">{t('activeStudents')}: {payload[0].payload.alunos}</p>
+                                <p className="text-xs text-ink-navy/70">{t('invoicesIssued')}: {payload[0].payload.faturas}</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }} />
+                        <Line type="monotone" dataKey="valor" stroke="#FF6B6B" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
 
                 {pagamentos.length === 0 ? (
                   <div className="text-center py-12 bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] text-sm text-ink-navy/40">
@@ -1692,36 +1765,32 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[rgba(28,37,65,0.06)]">
-                          {pagamentos.map(p => (
+                          {pagamentos.filter(p => {
+                            if (billingFilterType === 'quick') {
+                                if (billingQuickFilter === 'all') return true;
+                                const now = new Date();
+                                const days = billingQuickFilter === 'last30' ? 30 : billingQuickFilter === 'last60' ? 60 : 90;
+                                const limitDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                                return new Date(p.data) >= limitDate;
+                            } else {
+                                return selectedMonths.includes(new Date(p.data).getMonth());
+                            }
+                          }).map(p => (
                             <tr key={p.id} className="hover:bg-sand-light/10 transition-all">
                               <td className="p-4 font-serif text-sm font-bold text-ink-navy">{p.aluno_nome}</td>
                               <td className="p-4 font-sans text-ink-navy/80">{p.pacote_detalhes}</td>
                               <td className="p-4 font-mono-plex font-bold text-ink-navy">R$ {p.valor.toFixed(2)}</td>
-                              <td className="p-4 font-mono text-[11px] text-ink-navy/70">
-                                {new Date(p.data + 'T12:00:00').toLocaleDateString(language === 'en' ? 'en-US' : language === 'id' ? 'id-ID' : 'pt-BR')}
-                              </td>
+                              <td className="p-4 font-mono text-[11px] text-ink-navy/70">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
                               <td className="p-4">
-                                <span className={`inline-block text-[9px] font-mono-plex uppercase tracking-wider px-2 py-0.5 rounded-full font-bold ${
-                                  p.status === 'em_dia'
-                                    ? 'bg-sage-light text-sage'
-                                    : 'bg-coral/10 text-coral'
-                                }`}>
-                                  {p.status === 'em_dia' ? t('statusPaid') : t('statusPending')}
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${p.status === 'pago' ? 'bg-sage-light text-sage' : 'bg-coral/10 text-coral'}`}>
+                                  {p.status === 'pago' ? t('statusPaid') : t('statusPending')}
                                 </span>
                               </td>
                               <td className="p-4 text-right">
-                                {p.status === 'pendente' ? (
-                                  <button
-                                    onClick={() => handleMarkPaymentReceived(p.id)}
-                                    className="bg-sage text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-sage/90 transition-all cursor-pointer shadow-sm shadow-sage/10"
-                                  >
+                                {p.status === 'pendente' && (
+                                  <button onClick={() => handleMarkPaymentReceived(p.id)} className="text-xs bg-sand hover:bg-sand-dark text-ink-navy px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer">
                                     {t('btnMarkReceived')}
                                   </button>
-                                ) : (
-                                  <span className="text-sage text-xs font-semibold flex items-center justify-end gap-1">
-                                    <Check className="w-3.5 h-3.5" />
-                                    <span>{t('statusPaid')}</span>
-                                  </span>
                                 )}
                               </td>
                             </tr>
@@ -1732,7 +1801,17 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
 
                     {/* Mobile Ledger Card list */}
                     <div className="block md:hidden divide-y divide-[rgba(28,37,65,0.06)]">
-                      {pagamentos.map(p => (
+                      {pagamentos.filter(p => {
+                            if (billingFilterType === 'quick') {
+                                if (billingQuickFilter === 'all') return true;
+                                const now = new Date();
+                                const days = billingQuickFilter === 'last30' ? 30 : billingQuickFilter === 'last60' ? 60 : 90;
+                                const limitDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                                return new Date(p.data) >= limitDate;
+                            } else {
+                                return selectedMonths.includes(new Date(p.data).getMonth());
+                            }
+                          }).map(p => (
                         <div key={p.id} className="p-5 space-y-3">
                           <div className="flex justify-between items-center">
                             <h4 className="font-serif text-sm font-bold text-ink-navy">{p.aluno_nome}</h4>
