@@ -20,7 +20,7 @@ export interface DatabaseSchema {
 
 const defaultDb: DatabaseSchema = {
   professores: [
-    { id: 'prof-helena', nome: 'Profa. Helena Santos', email: 'helena@idiomas.com', criado_em: '2026-06-01T10:00:00Z' },
+    { id: 'prof-helena', nome: 'Meella Abdullah', email: 'meella@idiomas.com', criado_em: '2026-06-01T10:00:00Z' },
     { id: 'prof-marcus', nome: 'Prof. Marcus Aurelius', email: 'marcus@idiomas.com', criado_em: '2026-06-05T12:00:00Z' }
   ],
   alunos: [
@@ -73,10 +73,11 @@ const defaultDb: DatabaseSchema = {
     { id: 'pag-giulia-1', aluno_id: 'aluno-giulia', pacote_id: 'pac-giulia', valor: 960, data: '2026-05-30', status: 'em_dia' }
   ],
   emails: [
-    { id: 'email-1', to: 'carlos@aluno.com', subject: 'Matrícula Ativada - Inglês Avançado', body: 'Olá Carlos, sua matrícula no curso Inglês Avançado para Negócios foi ativada pela Profa. Helena Santos. Bons estudos!', sent_at: '2026-06-10T10:05:00Z' }
+    { id: 'email-1', to: 'carlos@aluno.com', subject: 'Matrícula Ativada - Inglês Avançado', body: 'Olá Carlos, sua matrícula no curso Inglês Avançado para Negócios foi ativada por Meella Abdullah. Bons estudos!', sent_at: '2026-06-10T10:05:00Z' }
   ],
   auth_credentials: {
     'helena@idiomas.com': { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' },
+    'meella@idiomas.com': { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' },
     'marcus@idiomas.com': { role: 'professor', userId: 'prof-marcus', passwordHash: 'admin' },
     'carlos@aluno.com': { role: 'aluno', userId: 'aluno-carlos', passwordHash: 'aluno' },
     'mariana@aluno.com': { role: 'aluno', userId: 'aluno-mariana', passwordHash: 'aluno' },

@@ -165,7 +165,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </p>
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => loginAsDemo('helena@idiomas.com', 'admin')}
+              onClick={() => loginAsDemo('meella@idiomas.com', 'admin')}
               className="flex items-center justify-center gap-1.5 bg-ink-navy text-sand text-xs font-medium py-2 px-3 rounded-lg border border-ink-navy/20 hover:opacity-95 transition-all cursor-pointer"
               disabled={loading}
             >

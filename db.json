@@ -1,0 +1,302 @@
+{
+  "professores": [
+    {
+      "id": "prof-helena",
+      "nome": "Meella Abdullah",
+      "email": "meella@idiomas.com",
+      "criado_em": "2026-06-01T10:00:00Z"
+    },
+    {
+      "id": "prof-marcus",
+      "nome": "Prof. Marcus Aurelius",
+      "email": "marcus@idiomas.com",
+      "criado_em": "2026-06-05T12:00:00Z"
+    }
+  ],
+  "alunos": [
+    {
+      "id": "aluno-carlos",
+      "nome": "Carlos Silva",
+      "email": "carlos@aluno.com",
+      "professor_id": "prof-helena",
+      "criado_em": "2026-06-10T09:00:00Z"
+    },
+    {
+      "id": "aluno-mariana",
+      "nome": "Mariana Souza",
+      "email": "mariana@aluno.com",
+      "professor_id": "prof-helena",
+      "criado_em": "2026-06-11T14:30:00Z"
+    },
+    {
+      "id": "aluno-giulia",
+      "nome": "Giulia Costa",
+      "email": "giulia@aluno.com",
+      "professor_id": "prof-marcus",
+      "criado_em": "2026-06-12T11:00:00Z"
+    }
+  ],
+  "cursos": [
+    {
+      "id": "curso-ingles",
+      "professor_id": "prof-helena",
+      "nome": "Inglês Avançado para Negócios",
+      "criado_em": "2026-06-02T10:00:00Z"
+    },
+    {
+      "id": "curso-espanhol",
+      "professor_id": "prof-helena",
+      "nome": "Espanhol Fluente",
+      "criado_em": "2026-06-03T11:00:00Z"
+    },
+    {
+      "id": "curso-italiano",
+      "professor_id": "prof-marcus",
+      "nome": "Italiano Prático",
+      "criado_em": "2026-06-06T15:00:00Z"
+    }
+  ],
+  "modulos": [
+    {
+      "id": "mod-ing1",
+      "curso_id": "curso-ingles",
+      "ordem": 1,
+      "titulo": "Present Perfect in Executive Chats",
+      "descricao": "Aprenda a reportar conquistas de projetos usando o tempo verbal Present Perfect.",
+      "arquivo_url": "/uploads/ingles_modulo1.pdf"
+    },
+    {
+      "id": "mod-ing2",
+      "curso_id": "curso-ingles",
+      "ordem": 2,
+      "titulo": "Business Negotiation Tactics",
+      "descricao": "Vocabulário essencial para negociações, fechamento de acordos e gestão de objeções.",
+      "arquivo_url": "/uploads/ingles_modulo2.pdf"
+    },
+    {
+      "id": "mod-ing3",
+      "curso_id": "curso-ingles",
+      "ordem": 3,
+      "titulo": "Advanced Report Writing",
+      "descricao": "Como estruturar relatórios executivos formais com conectores lógicos avançados.",
+      "arquivo_url": "/uploads/ingles_modulo3.pdf"
+    },
+    {
+      "id": "mod-esp1",
+      "curso_id": "curso-espanhol",
+      "ordem": 1,
+      "titulo": "Saludos y Presentaciones de Negocios",
+      "descricao": "Primeiros contatos, saudações formais e apresentações no ambiente profissional.",
+      "arquivo_url": "/uploads/espanhol_modulo1.pdf"
+    },
+    {
+      "id": "mod-esp2",
+      "curso_id": "curso-espanhol",
+      "ordem": 2,
+      "titulo": "La Gramática del Éxito",
+      "descricao": "Expressando opiniões com o subjuntivo de forma polida e estruturada.",
+      "arquivo_url": "/uploads/espanhol_modulo2.pdf"
+    },
+    {
+      "id": "mod-ita1",
+      "curso_id": "curso-italiano",
+      "ordem": 1,
+      "titulo": "Introduzione alla Lingua",
+      "descricao": "Pronúncia básica, cumprimentos e situações cotidianas simples.",
+      "arquivo_url": "/uploads/italiano_modulo1.pdf"
+    },
+    {
+      "id": "mod-1783179454234",
+      "curso_id": "curso-ingles",
+      "ordem": 4,
+      "titulo": "Aula 1 ",
+      "descricao": "começando no inlges",
+      "arquivo_url": "/uploads/aula_1__1783179454087.pdf"
+    }
+  ],
+  "matriculas": [
+    {
+      "id": "mat-carlos",
+      "aluno_id": "aluno-carlos",
+      "curso_id": "curso-ingles",
+      "criado_em": "2026-06-10T10:00:00Z"
+    },
+    {
+      "id": "mat-mariana",
+      "aluno_id": "aluno-mariana",
+      "curso_id": "curso-espanhol",
+      "criado_em": "2026-06-12T15:00:00Z"
+    },
+    {
+      "id": "mat-giulia",
+      "aluno_id": "aluno-giulia",
+      "curso_id": "curso-italiano",
+      "criado_em": "2026-06-13T12:00:00Z"
+    }
+  ],
+  "progresso": [
+    {
+      "id": "prog-c1",
+      "matricula_id": "mat-carlos",
+      "modulo_id": "mod-ing1",
+      "liberado_em": "2026-06-10T10:05:00Z",
+      "liberado_por": "manual"
+    },
+    {
+      "id": "prog-c2",
+      "matricula_id": "mat-carlos",
+      "modulo_id": "mod-ing2",
+      "liberado_em": "2026-06-15T16:00:00Z",
+      "liberado_por": "manual"
+    },
+    {
+      "id": "prog-m1",
+      "matricula_id": "mat-mariana",
+      "modulo_id": "mod-esp1",
+      "liberado_em": "2026-06-12T15:05:00Z",
+      "liberado_por": "manual"
+    },
+    {
+      "id": "prog-g1",
+      "matricula_id": "mat-giulia",
+      "modulo_id": "mod-ita1",
+      "liberado_em": "2026-06-13T12:05:00Z",
+      "liberado_por": "manual"
+    }
+  ],
+  "pacotes": [
+    {
+      "id": "pac-carlos",
+      "aluno_id": "aluno-carlos",
+      "quantidade_aulas": 10,
+      "aulas_consumidas": 7,
+      "valor": 800,
+      "vencimento": "2026-08-10",
+      "status": "ativo"
+    },
+    {
+      "id": "pac-mariana",
+      "aluno_id": "aluno-mariana",
+      "quantidade_aulas": 5,
+      "aulas_consumidas": 2,
+      "valor": 450,
+      "vencimento": "2026-07-25",
+      "status": "ativo"
+    },
+    {
+      "id": "pac-giulia",
+      "aluno_id": "aluno-giulia",
+      "quantidade_aulas": 12,
+      "aulas_consumidas": 12,
+      "valor": 960,
+      "vencimento": "2026-06-30",
+      "status": "expirado"
+    }
+  ],
+  "aulas": [
+    {
+      "id": "aula-carlos-1",
+      "professor_id": "prof-helena",
+      "aluno_id": "aluno-carlos",
+      "pacote_id": "pac-carlos",
+      "data_hora": "2026-07-02T14:00:00",
+      "status": "realizada",
+      "link_video": "https://meet.google.com/abc-defg-hij"
+    },
+    {
+      "id": "aula-carlos-2",
+      "professor_id": "prof-helena",
+      "aluno_id": "aluno-carlos",
+      "pacote_id": "pac-carlos",
+      "status": "realizada"
+    },
+    {
+      "id": "aula-mariana-1",
+      "professor_id": "prof-helena",
+      "aluno_id": "aluno-mariana",
+      "pacote_id": "pac-mariana",
+      "status": "realizada"
+    }
+  ],
+  "pagamentos": [
+    {
+      "id": "pag-carlos-1",
+      "aluno_id": "aluno-carlos",
+      "pacote_id": "pac-carlos",
+      "valor": 800,
+      "data": "2026-06-10",
+      "status": "em_dia"
+    },
+    {
+      "id": "pag-mariana-1",
+      "aluno_id": "aluno-mariana",
+      "pacote_id": "pac-mariana",
+      "valor": 450,
+      "data": "2026-06-12",
+      "status": "em_dia"
+    },
+    {
+      "id": "pag-giulia-1",
+      "aluno_id": "aluno-giulia",
+      "pacote_id": "pac-giulia",
+      "valor": 960,
+      "data": "2026-05-30",
+      "status": "em_dia"
+    }
+  ],
+  "emails": [
+    {
+      "id": "email-1783183048019",
+      "to": "mariana@aluno.com",
+      "subject": "🧾 Recibo de Pagamento Confirmado",
+      "body": "Olá Mariana Souza,\n\nConfirmamos o recebimento do seu pagamento no valor de R$ 450.00 referente ao seu pacote de aulas.\n\nAgradecemos a parceria!\n\nMeella Abdullah",
+      "sent_at": "2026-07-04T16:37:28.019Z"
+    },
+    {
+      "id": "email-1783177043381",
+      "to": "carlos@aluno.com",
+      "subject": "⚠️ Lembrete de Aula Amanhã às 15:00",
+      "body": "Olá Carlos Silva,\n\nEste é um lembrete automático de que você tem uma aula agendada com Meella Abdullah amanhã, dia 05/07/2026 às 15:00.\n\nLink da videochamada: https://meet.google.com/abc-defg-hij\n\nPrepare seus materiais!",
+      "sent_at": "2026-07-04T14:57:23.381Z"
+    },
+    {
+      "id": "email-1",
+      "to": "carlos@aluno.com",
+      "subject": "Matrícula Ativada - Inglês Avançado",
+      "body": "Olá Carlos, sua matrícula no curso Inglês Avançado para Negócios foi ativada por Meella Abdullah. Bons estudos!",
+      "sent_at": "2026-06-10T10:05:00Z"
+    }
+  ],
+  "auth_credentials": {
+    "helena@idiomas.com": {
+      "role": "professor",
+      "userId": "prof-helena",
+      "passwordHash": "admin"
+    },
+    "meella@idiomas.com": {
+      "role": "professor",
+      "userId": "prof-helena",
+      "passwordHash": "admin"
+    },
+    "marcus@idiomas.com": {
+      "role": "professor",
+      "userId": "prof-marcus",
+      "passwordHash": "admin"
+    },
+    "carlos@aluno.com": {
+      "role": "aluno",
+      "userId": "aluno-carlos",
+      "passwordHash": "aluno"
+    },
+    "mariana@aluno.com": {
+      "role": "aluno",
+      "userId": "aluno-mariana",
+      "passwordHash": "aluno"
+    },
+    "giulia@aluno.com": {
+      "role": "aluno",
+      "userId": "aluno-giulia",
+      "passwordHash": "aluno"
+    }
+  }
+}

@@ -17,7 +17,7 @@ interface DatabaseSchema {
 
 const SEED_DB: DatabaseSchema = {
   professores: [
-    { id: 'prof-helena', nome: 'Profa. Helena Santos', email: 'helena@idiomas.com', criado_em: '2026-06-01T10:00:00Z' },
+    { id: 'prof-helena', nome: 'Meella Abdullah', email: 'meella@idiomas.com', criado_em: '2026-06-01T10:00:00Z' },
     { id: 'prof-marcus', nome: 'Prof. Marcus Aurelius', email: 'marcus@idiomas.com', criado_em: '2026-06-05T12:00:00Z' }
   ],
   alunos: [
@@ -65,10 +65,11 @@ const SEED_DB: DatabaseSchema = {
     { id: 'pag-giulia-1', aluno_id: 'aluno-giulia', pacote_id: 'pac-giulia', valor: 960, data: '2026-05-30', status: 'em_dia' }
   ],
   emails: [
-    { id: 'email-1', to: 'carlos@aluno.com', subject: 'Matrícula Ativada - Inglês Avançado', body: 'Olá Carlos, sua matrícula no curso Inglês Avançado para Negócios foi ativada pela Profa. Helena Santos. Bons estudos!', sent_at: '2026-06-10T10:05:00Z' }
+    { id: 'email-1', to: 'carlos@aluno.com', subject: 'Matrícula Ativada - Inglês Avançado', body: 'Olá Carlos, sua matrícula no curso Inglês Avançado para Negócios foi ativada por Meella Abdullah. Bons estudos!', sent_at: '2026-06-10T10:05:00Z' }
   ],
   auth_credentials: {
     'helena@idiomas.com': { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' },
+    'meella@idiomas.com': { role: 'professor', userId: 'prof-helena', passwordHash: 'admin' },
     'marcus@idiomas.com': { role: 'professor', userId: 'prof-marcus', passwordHash: 'admin' },
     'carlos@aluno.com': { role: 'aluno', userId: 'aluno-carlos', passwordHash: 'aluno' },
     'mariana@aluno.com': { role: 'aluno', userId: 'aluno-mariana', passwordHash: 'aluno' },
@@ -707,7 +708,7 @@ export function initializeApiFallback() {
   // Pre-seed local database
   getLocalData();
 
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const urlString = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
     // We only intercept requests directed at '/api/'
@@ -742,4 +743,19 @@ export function initializeApiFallback() {
     // Non-api assets / pages go through the standard fetch route
     return originalFetch(input, init);
   };
+
+  try {
+    Object.defineProperty(window, 'fetch', {
+      value: customFetch,
+      configurable: true,
+      writable: true
+    });
+  } catch (err) {
+    console.error('[API Fallback] Failed to redefine window.fetch via Object.defineProperty. Fallback might not work.', err);
+    try {
+      (window as any).fetch = customFetch;
+    } catch (assignErr) {
+      console.error('[API Fallback] Direct assignment of window.fetch failed too.', assignErr);
+    }
+  }
 }
