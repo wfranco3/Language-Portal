@@ -50,11 +50,11 @@ const translations: Record<Language, Record<string, string>> = {
     navBilling: 'Faturamento',
 
     // Professor Dashboard - Stats
-    statPortfolio: 'CARTEIRA',
+    statPortfolio: 'ALUNOS',
     statStudentsDesc: 'Alunos ativos matriculados',
     statPending: 'PENDÊNCIAS',
     statInvoicesDesc: 'faturas de pacotes em aberto',
-    statSchedule: 'CRONOGRAMA',
+    statSchedule: 'AGENDA',
     statClassesDesc: 'Aulas agendadas para os próximos 7 dias',
 
     // Professor Dashboard - Immediate Schedule
@@ -281,11 +281,11 @@ const translations: Record<Language, Record<string, string>> = {
     navBilling: 'Billing',
 
     // Professor Dashboard - Stats
-    statPortfolio: 'PORTFOLIO',
+    statPortfolio: 'STUDENTS',
     statStudentsDesc: 'Active enrolled students',
     statPending: 'PENDING',
     statInvoicesDesc: 'unpaid package invoices',
-    statSchedule: 'SCHEDULE',
+    statSchedule: 'AGENDA',
     statClassesDesc: 'Classes scheduled for the next 7 days',
 
     // Professor Dashboard - Immediate Schedule
@@ -512,11 +512,11 @@ const translations: Record<Language, Record<string, string>> = {
     navBilling: 'Penagihan',
 
     // Professor Dashboard - Stats
-    statPortfolio: 'PORTOFOLIO',
+    statPortfolio: 'SISWA',
     statStudentsDesc: 'Siswa aktif terdaftar',
     statPending: 'PENDING',
     statInvoicesDesc: 'tagihan paket belum dibayar',
-    statSchedule: 'JADWAL',
+    statSchedule: 'AGENDA',
     statClassesDesc: 'Kelas dijadwalkan untuk 7 hari ke depan',
 
     // Professor Dashboard - Immediate Schedule

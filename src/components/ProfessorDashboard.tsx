@@ -522,14 +522,6 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
             <ThemeSelector />
 
             <button
-              onClick={handleTriggerCron}
-              className="bg-sand hover:bg-ink-navy hover:text-sand text-ink-navy text-xs font-medium py-2 px-3 rounded-lg transition-all flex items-center gap-1.5 border border-ink-navy/10 cursor-pointer"
-              disabled={cronLoading}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${cronLoading ? 'animate-spin' : ''}`} />
-              <span>{t('forceCron')}</span>
-            </button>
-            <button
               onClick={onLogout}
               className="bg-coral text-white hover:bg-coral/90 text-xs font-medium py-2 px-4 rounded-lg transition-all cursor-pointer border border-coral/10"
             >
@@ -595,34 +587,55 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                 {/* Stats Bento Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Card 1 */}
-                  <div className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden">
+                  <button
+                    onClick={() => setActiveTab('alunos')}
+                    className={`bg-card-bg text-left rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 w-full block ${
+                      theme === 'premium' 
+                        ? 'hover:border-[#D4AF37]/50 hover:shadow-[0_0_25px_rgba(212,175,55,0.25)]' 
+                        : 'hover:border-coral/40 hover:shadow-[0_0_20px_rgba(232,93,78,0.15)]'
+                    }`}
+                  >
                     <div className="absolute top-4 right-4 bg-sand rounded-full p-2 text-ink-navy">
                       <Users className="w-5 h-5" />
                     </div>
                     <span className="text-[9px] font-mono-plex uppercase tracking-widest text-coral font-bold block mb-1">{t('statPortfolio')}</span>
                     <h3 className="text-4xl font-serif text-ink-navy mb-1">{activeAlunosCount}</h3>
                     <p className="text-xs text-ink-navy/60">{t('statStudentsDesc')}</p>
-                  </div>
+                  </button>
 
                   {/* Card 2 */}
-                  <div className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden">
+                  <button
+                    onClick={() => setActiveTab('pagamentos')}
+                    className={`bg-card-bg text-left rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 w-full block ${
+                      theme === 'premium' 
+                        ? 'hover:border-[#D4AF37]/50 hover:shadow-[0_0_25px_rgba(212,175,55,0.25)]' 
+                        : 'hover:border-coral/40 hover:shadow-[0_0_20px_rgba(232,93,78,0.15)]'
+                    }`}
+                  >
                     <div className="absolute top-4 right-4 bg-coral/10 rounded-full p-2 text-coral">
                       <DollarSign className="w-5 h-5" />
                     </div>
                     <span className="text-[9px] font-mono-plex uppercase tracking-widest text-coral font-bold block mb-1">{t('statPending')}</span>
                     <h3 className="text-4xl font-serif text-ink-navy mb-1">R$ {pendingValue}</h3>
                     <p className="text-xs text-ink-navy/60">{pendingCount} {t('statInvoicesDesc')}</p>
-                  </div>
+                  </button>
 
                   {/* Card 3 */}
-                  <div className="bg-card-bg rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden">
+                  <button
+                    onClick={() => setActiveTab('agenda')}
+                    className={`bg-card-bg text-left rounded-[14px] border border-[rgba(28,37,65,0.12)] p-6 relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 w-full block ${
+                      theme === 'premium' 
+                        ? 'hover:border-[#D4AF37]/50 hover:shadow-[0_0_25px_rgba(212,175,55,0.25)]' 
+                        : 'hover:border-coral/40 hover:shadow-[0_0_20px_rgba(232,93,78,0.15)]'
+                    }`}
+                  >
                     <div className="absolute top-4 right-4 bg-sage-light text-sage rounded-full p-2">
                       <Calendar className="w-5 h-5" />
                     </div>
                     <span className="text-[9px] font-mono-plex uppercase tracking-widest text-coral font-bold block mb-1">{t('statSchedule')}</span>
                     <h3 className="text-4xl font-serif text-ink-navy mb-1">{scheduledThisWeek}</h3>
                     <p className="text-xs text-ink-navy/60">{t('statClassesDesc')}</p>
-                  </div>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
