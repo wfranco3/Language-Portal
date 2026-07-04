@@ -9,6 +9,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { useLanguage } from '../lib/LanguageContext';
+import { useAppTheme } from '../lib/ThemeContext';
 import LanguageSelector from './LanguageSelector';
 import ThemeSelector from './ThemeSelector';
 
@@ -19,6 +20,7 @@ interface ProfessorDashboardProps {
 
 export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboardProps) {
   const { t, language } = useLanguage();
+  const { theme } = useAppTheme();
   // Database States
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -1695,17 +1697,17 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
 
                 {billingViewMode === 'list' && (
                   <div className="flex flex-wrap gap-2 items-center bg-sand-light/30 p-3 rounded-xl border border-ink-navy/5">
-                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last30' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last30Days')}</button>
-                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last60'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last60' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last60Days')}</button>
-                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last90'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${billingFilterType === 'quick' && billingQuickFilter === 'last90' ? 'bg-coral text-white' : 'bg-white text-ink-navy border border-ink-navy/10'}`}>{t('last90Days')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${billingFilterType === 'quick' && billingQuickFilter === 'last30' ? 'bg-ink-navy text-sand shadow-sm' : 'bg-sand hover:bg-sand/80 text-ink-navy border border-ink-navy/10'}`}>{t('last30Days')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last60'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${billingFilterType === 'quick' && billingQuickFilter === 'last60' ? 'bg-ink-navy text-sand shadow-sm' : 'bg-sand hover:bg-sand/80 text-ink-navy border border-ink-navy/10'}`}>{t('last60Days')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last90'); }} className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${billingFilterType === 'quick' && billingQuickFilter === 'last90' ? 'bg-ink-navy text-sand shadow-sm' : 'bg-sand hover:bg-sand/80 text-ink-navy border border-ink-navy/10'}`}>{t('last90Days')}</button>
                     
-                    <select className="text-xs px-3 py-1.5 rounded-lg border border-ink-navy/10 bg-white" onChange={(e) => { setBillingFilterType('months'); setSelectedMonths([parseInt(e.target.value)]); }} value={selectedMonths[0]}>
+                    <select className="text-xs px-3 py-1.5 rounded-lg border border-ink-navy/10 bg-sand text-ink-navy font-semibold cursor-pointer" onChange={(e) => { setBillingFilterType('months'); setSelectedMonths([parseInt(e.target.value)]); }} value={selectedMonths[0]}>
                       {[t('january'), t('february'), t('march'), t('april'), t('may'), t('june'), t('july'), t('august'), t('september'), t('october'), t('november'), t('december')].map((m, i) => (
-                          <option key={i} value={i}>{m}</option>
+                          <option key={i} value={i} className="bg-card-bg text-ink-navy">{m}</option>
                       ))}
                     </select>
                     
-                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); setSelectedMonths([new Date().getMonth()]); }} className="text-xs text-ink-navy/50 underline">{t('clearFilter')}</button>
+                    <button onClick={() => { setBillingFilterType('quick'); setBillingQuickFilter('last30'); setSelectedMonths([new Date().getMonth()]); }} className="text-xs text-ink-navy/60 hover:text-ink-navy underline transition-all font-semibold ml-auto sm:ml-2">{t('clearFilter')}</button>
                   </div>
                 )}
                 
@@ -1723,23 +1725,23 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           };
                         })
                       }>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme === 'premium' ? "rgba(244,244,246,0.1)" : "rgba(28,37,65,0.1)"} />
+                        <XAxis dataKey="name" stroke={theme === 'premium' ? "#F4F4F6" : "#1C2541"} tick={{ fill: theme === 'premium' ? "#F4F4F6" : "#1C2541", fontSize: 10 }} />
+                        <YAxis stroke={theme === 'premium' ? "#F4F4F6" : "#1C2541"} tick={{ fill: theme === 'premium' ? "#F4F4F6" : "#1C2541", fontSize: 10 }} />
                         <Tooltip content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
                             return (
-                              <div className="bg-white p-3 border border-ink-navy/10 rounded-lg shadow-lg">
+                              <div className="bg-card-bg p-3 border border-ink-navy/15 rounded-lg shadow-lg">
                                 <p className="font-bold text-ink-navy">{label}</p>
-                                <p className="text-xs text-ink-navy/70">{t('totalBilled')}: R$ {payload[0].value?.toFixed(2)}</p>
-                                <p className="text-xs text-ink-navy/70">{t('activeStudents')}: {payload[0].payload.alunos}</p>
-                                <p className="text-xs text-ink-navy/70">{t('invoicesIssued')}: {payload[0].payload.faturas}</p>
+                                <p className="text-xs text-ink-navy/80 mt-1 font-semibold">{t('totalBilled')}: R$ {payload[0].value?.toFixed(2)}</p>
+                                <p className="text-xs text-ink-navy/70 mt-0.5">{t('activeStudents')}: {payload[0].payload.alunos}</p>
+                                <p className="text-xs text-ink-navy/70 mt-0.5">{t('invoicesIssued')}: {payload[0].payload.faturas}</p>
                               </div>
                             );
                           }
                           return null;
                         }} />
-                        <Line type="monotone" dataKey="valor" stroke="#FF6B6B" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
+                        <Line type="monotone" dataKey="valor" stroke={theme === 'premium' ? "#D4AF37" : "#E85D4E"} strokeWidth={3} dot={{r: 6, fill: theme === 'premium' ? "#D4AF37" : "#E85D4E"}} activeDot={{r: 8}} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -1831,7 +1833,7 @@ export default function ProfessorDashboard({ user, onLogout }: ProfessorDashboar
                           {p.status === 'pendente' && (
                             <button
                               onClick={() => handleMarkPaymentReceived(p.id)}
-                              className="w-full bg-sage text-white font-bold py-2 rounded-lg text-center cursor-pointer text-xs"
+                              className="w-full bg-sage text-ink-navy font-bold py-2 rounded-lg text-center cursor-pointer text-xs"
                             >
                               {t('btnMarkReceived')}
                             </button>
