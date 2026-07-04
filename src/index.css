@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght=9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Classic Theme Colors (default) */
+  --color-ink-navy: #1C2541;
+  --color-sand: #EDE6D6;
+  --color-sand-light: #F7F3EA;
+  --color-coral: #E85D4E;
+  --color-sage: #7C9473;
+  --color-sage-light: #E4EBDF;
+  --color-card-bg: #FFFFFF;
+}
+
+/* Premium Mode Theme overrides */
+body.theme-premium {
+  --color-ink-navy: #F4F4F6; /* Platinum off-white */
+  --color-sand: #1B2130; /* Darker slate/navy background */
+  --color-sand-light: #0A0D14; /* Deep premium obsidian/onyx */
+  --color-coral: #D4AF37; /* Classic Burnished Gold */
+  --color-sage: #52B788; /* Minty Emerald Green */
+  --color-sage-light: rgba(82, 183, 136, 0.15);
+  --color-card-bg: #111520; /* Dark velvet luxury charcoal */
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-sand-light);
+  color: var(--color-ink-navy);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+h1, h2, h3, h4, .font-serif-fraunces {
+  font-family: var(--font-serif);
+}
+
+.font-mono-plex {
+  font-family: var(--font-mono);
+}

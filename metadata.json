@@ -1,0 +1,6 @@
+{
+  "name": "Gestão de Alunos de Idiomas",
+  "description": "Plataforma para professores de idiomas gerenciarem seus alunos, aulas, materiais de curso e pagamentos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
